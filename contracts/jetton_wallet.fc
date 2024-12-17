@@ -47,7 +47,7 @@ int gas_consumption() asm "15000000 PUSHINT"; ;; 0.015 TON
   (int balance, slice owner_address, slice jetton_master_address, cell jetton_wallet_code) = load_data();
   balance -= jetton_amount;
 
-  throw_unless(705, equal_slices(owner_address, sender_address));
+  throw_unless(705, equal_slices_bits(owner_address, sender_address));
   throw_unless(706, balance >= 0);
 
   cell state_init = calculate_jetton_wallet_state_init(to_owner_address, jetton_master_address, jetton_wallet_code);
@@ -107,9 +107,9 @@ int gas_consumption() asm "15000000 PUSHINT"; ;; 0.015 TON
   slice from_address = in_msg_body~load_msg_addr();
   slice response_address = in_msg_body~load_msg_addr();
   throw_unless(707,
-      equal_slices(jetton_master_address, sender_address)
+      equal_slices_bits(jetton_master_address, sender_address)
       |
-      equal_slices(calculate_user_jetton_wallet_address(from_address, jetton_master_address, jetton_wallet_code), sender_address)
+      equal_slices_bits(calculate_user_jetton_wallet_address(from_address, jetton_master_address, jetton_wallet_code), sender_address)
   );
   int forward_ton_amount = in_msg_body~load_coins();
 
@@ -162,7 +162,7 @@ int gas_consumption() asm "15000000 PUSHINT"; ;; 0.015 TON
   ;; ignore custom payload
   ;; slice custom_payload = in_msg_body~load_dict();
   balance -= jetton_amount;
-  throw_unless(705, equal_slices(owner_address, sender_address));
+  throw_unless(705, equal_slices_bits(owner_address, sender_address));
   throw_unless(706, balance >= 0);
   throw_unless(707, msg_value > fwd_fee + 2 * gas_consumption());
 

@@ -1,13 +1,12 @@
 import {Address, beginCell, Cell, Contract, contractAddress, ContractProvider, Sender, SendMode, toNano} from "@ton/core"
 
-const OP_CODE_MINT = 0x595f5f3e
+const OP_CODE_MINT = 0x895f5f3e
 const OP_CODE_BURN = 0x7bdd97de
+const OP_CODE_INTERNAL_TRANSFER = 0x178d4519
 const OP_CODE_CHANGE_ADMIN = 0x895d6f3e
 const OP_CODE_CHANGE_CONTENT = 0x873e46a
 
-export type JettonContent = {
 
-}
 
 export type JettonMinterConfig = {
     admin_address: Address,
@@ -49,6 +48,22 @@ export class JettonMinter implements Contract {
         return new JettonMinter(address)
     }
 
+    protected static jettonInternalTransfer(jetton_amount: bigint,
+        forward_ton_amount: bigint,
+        response_addr?: Address,
+        query_id: number | bigint = 0
+    ) {
+
+    return beginCell()
+        .storeUint(OP_CODE_INTERNAL_TRANSFER, 32)
+        .storeUint(query_id, 64)
+        .storeCoins(jetton_amount)
+        .storeAddress(null)
+        .storeAddress(response_addr)
+        .storeCoins(forward_ton_amount)
+        .storeBit(false)
+        .endCell();
+    }
 
     async sendDeploy(provider: ContractProvider, via: Sender, value: bigint) {
         await provider.internal(via, {
@@ -58,6 +73,27 @@ export class JettonMinter implements Contract {
         })
     }
 
+    async mintMessage(from: Address, to: Address, jettonAmount: bigint, fwdTonAmount: bigint, totalTonAmount: bigint) {
+        const mintMsg = beginCell()
+                        .storeUint(OP_CODE_INTERNAL_TRANSFER, 32)
+                        .storeUint(0, 64)
+                        .storeCoins(jettonAmount)
+                        .storeAddress(null)
+                        .storeAddress(from)
+                        .storeCoins(fwdTonAmount)
+                        .storeMaybeRef(null)
+                    .endCell()
+
+        return beginCell()
+                .storeUint(OP_CODE_MINT, 32)
+                .storeUint(0, 64)
+                .storeAddress(to)
+                .storeCoins(totalTonAmount)
+                .storeCoins(jettonAmount)
+                .storeRef(mintMsg)
+            .endCell()
+    }
+
     async sendMintTokens(provider: ContractProvider, via: Sender, opts: {
         toAddress: Address,
         jettonAmount: bigint,
@@ -65,16 +101,9 @@ export class JettonMinter implements Contract {
         totalTonAmount: bigint
     }) { 
         await provider.internal(via, {
-            value: toNano("0.05") + opts.totalTonAmount,
+            value: toNano("0.015") + opts.totalTonAmount,
             sendMode: SendMode.PAY_GAS_SEPARATELY,
-            body: beginCell()
-                .storeUint(OP_CODE_MINT, 32)
-                .storeUint(0, 64)
-                .storeAddress(opts.toAddress)
-                .storeCoins(opts.jettonAmount)
-                .storeCoins(opts.fwdTonAmount)
-                .storeCoins(opts.totalTonAmount)
-                .endCell()
+            body: await this.mintMessage(this.address, opts.toAddress, opts.jettonAmount, opts.fwdTonAmount, opts.totalTonAmount)
         })
     }
 

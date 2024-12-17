@@ -55,7 +55,7 @@
     (int total_supply, slice admin_address, cell content, cell jetton_wallet_code) = load_data();
 
     if (op == op::mint()) {
-        throw_unless(73, equal_slices(sender_address, admin_address));
+        throw_unless(73, equal_slices_bits(sender_address, admin_address));
         slice to_address = in_msg_body~load_msg_addr();
         int amount = in_msg_body~load_coins();
         cell master_msg = in_msg_body~load_ref();
@@ -71,7 +71,7 @@
         int jetton_amount = in_msg_body~load_coins();
         slice from_address = in_msg_body~load_msg_addr();
         throw_unless(74,
-            equal_slices(calculate_user_jetton_wallet_address(from_address, my_address(), jetton_wallet_code), sender_address)
+            equal_slices_bits(calculate_user_jetton_wallet_address(from_address, my_address(), jetton_wallet_code), sender_address)
         );
         save_data(total_supply - jetton_amount, admin_address, content, jetton_wallet_code);
         slice response_address = in_msg_body~load_msg_addr();
@@ -89,14 +89,14 @@
     }
 
     if (op == op::change_admin()) { ;; change admin
-        throw_unless(73, equal_slices(sender_address, admin_address));
+        throw_unless(73, equal_slices_bits(sender_address, admin_address));
         slice new_admin_address = in_msg_body~load_msg_addr();
         save_data(total_supply, new_admin_address, content, jetton_wallet_code);
         return ();
     }
 
     if (op == op::change_content()) { ;; change content, delete this for immutable tokens
-        throw_unless(73, equal_slices(sender_address, admin_address));
+        throw_unless(73, equal_slices_bits(sender_address, admin_address));
         save_data(total_supply, admin_address, in_msg_body~load_ref(), jetton_wallet_code);
         return ();
     }

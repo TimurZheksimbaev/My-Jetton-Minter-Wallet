@@ -72,7 +72,6 @@ export class JettonWallet implements Contract {
 
     }) {}
 
-
     async getWalletData(provider: ContractProvider) {
         const result = (await provider.get("get_wallet_data", [])).stack
         return {
